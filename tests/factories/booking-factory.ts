@@ -1,31 +1,21 @@
-import faker from '@faker-js/faker';
 import { TicketStatus } from '@prisma/client';
 import { generateValidToken } from '../helpers';
 import { createUser } from './users-factory';
 import { createEnrollmentWithAddress } from './enrollments-factory';
 import { createTicket, createTicketType } from './tickets-factory';
+import { createHotel, createRoomWithHotelId } from './hotels-factory';
 import { prisma } from '@/config';
 
-export async function createHotel() {
-  return await prisma.hotel.create({
+export async function createBooking(userId: number, roomId: number) {
+  return await prisma.booking.create({
     data: {
-      name: faker.name.findName(),
-      image: faker.image.imageUrl(),
+      userId,
+      roomId,
     },
   });
 }
 
-export async function createRoomWithHotelId(hotelId: number) {
-  return prisma.room.create({
-    data: {
-      name: '1020',
-      capacity: 3,
-      hotelId: hotelId,
-    },
-  });
-}
-
-export async function createHotelWithContext(
+export async function createBookingWithContext(
   ticketStat: TicketStatus = TicketStatus.PAID,
   ttHaveHotel = true,
   ttIsRemote = false,
@@ -36,6 +26,8 @@ export async function createHotelWithContext(
   const ttype = await createTicketType(ttIsRemote, ttHaveHotel);
   const ticket = await createTicket(enrollment.id, ttype.id, ticketStat);
   const hotel = await createHotel();
+  const room = await createRoomWithHotelId(hotel.id);
+  const booking = await createBooking(user.id, room.id);
 
   return {
     user,
@@ -44,5 +36,7 @@ export async function createHotelWithContext(
     ttype,
     ticket,
     hotel,
+    room,
+    booking,
   };
 }

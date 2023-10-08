@@ -8,3 +8,9 @@ export type FullUser = {
   ticket: Ticket;
   ticketType: TicketType;
 };
+
+export enum verbs {
+  'post' = 'post',
+  'get' = 'get',
+  'put' = 'put',
+}
