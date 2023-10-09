@@ -9,3 +9,5 @@ export * from './invalid-credentials-error';
 export * from './duplicate-email-error';
 export * from './enrollment-not-found-error';
 export * from './invalid-cep-error';
+export * from './cannot-join-full-room-error';
+export * from './forbidden-error';

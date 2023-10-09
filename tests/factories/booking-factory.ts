@@ -5,6 +5,7 @@ import { createEnrollmentWithAddress } from './enrollments-factory';
 import { createTicket, createTicketType } from './tickets-factory';
 import { createHotel, createRoomWithHotelId } from './hotels-factory';
 import { prisma } from '@/config';
+import { createEvent } from './events-factory';
 
 export async function createBooking(userId: number, roomId: number) {
   return await prisma.booking.create({
@@ -20,6 +21,7 @@ export async function createBookingWithContext(
   ttHaveHotel = true,
   ttIsRemote = false,
 ) {
+  const event = await createEvent();
   const user = await createUser();
   const token = await generateValidToken(user);
   const enrollment = await createEnrollmentWithAddress(user);
@@ -30,6 +32,7 @@ export async function createBookingWithContext(
   const booking = await createBooking(user.id, room.id);
 
   return {
+    event,
     user,
     token,
     enrollment,

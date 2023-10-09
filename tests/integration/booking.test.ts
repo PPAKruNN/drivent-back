@@ -18,12 +18,12 @@ beforeEach(async () => {
 
 const server = supertest(app);
 
-describe.each([
-  [verbs.get, '/booking', ''],
-  [verbs.post, '/booking', ''],
-  [verbs.put, '/booking', 1],
-])('%s %s >>> Check if route authentication returns 401 to requests without token', (verb: verbs, endpoint, param) => {
-  it('should respond 200 if all pre-requisites are met', async () => {
+describe('Check route authentication', () => {
+  it.each([
+    [verbs.get, '/booking', ''],
+    [verbs.post, '/booking', ''],
+    [verbs.put, '/booking', 1],
+  ])('%s %s > should respond 401 if does not send token', async (verb: verbs, endpoint, param) => {
     const url = `${endpoint}/${param}`;
     const response = await server[verb](url);
     expect(response.statusCode).toBe(httpStatus.UNAUTHORIZED);
@@ -39,21 +39,19 @@ describe('GET /booking', () => {
     expect(result.body).toEqual(
       expect.objectContaining({
         id: expect.any(Number),
-        Room: expect.arrayContaining([
-          {
-            id: expect.any(Number),
-            hotelId: expect.any(Number),
-            createdAt: expect.any(Date),
-            capacity: expect.any(Number),
-          },
-        ]),
+        Room: expect.objectContaining({
+          id: expect.any(Number),
+          hotelId: expect.any(Number),
+          createdAt: expect.any(String),
+          capacity: expect.any(Number),
+        }),
       }),
     );
     expect(result.statusCode).toBe(httpStatus.OK);
   });
 
   it('should respond with status 404 if user DOESNT have a booking', async () => {
-    const token = generateValidToken();
+    const token = await generateValidToken();
     const result = await server.get('/booking').set('Authorization', `Bearer ${token}`);
 
     expect(result.statusCode).toBe(httpStatus.NOT_FOUND);
@@ -63,6 +61,7 @@ describe('GET /booking', () => {
 describe('POST /booking', () => {
   it('should respond with status 200 and booking id if user have paid presencial ticket with hotel', async () => {
     const context = await createBookingWithContext();
+    await prisma.booking.deleteMany({});
 
     const result = await server
       .post('/booking')
@@ -80,6 +79,7 @@ describe('POST /booking', () => {
 
   it('should respond with status 404 if room doesnt exist', async () => {
     const context = await createBookingWithContext();
+    await prisma.booking.deleteMany({});
 
     const result = await server
       .post('/booking')
@@ -110,6 +110,7 @@ describe('POST /booking', () => {
 
   it('should respond with status 403 if ticket type is remote', async () => {
     const context = await createBookingWithContext('PAID', true, true);
+    await prisma.booking.deleteMany({});
 
     const result = await server
       .post('/booking')
@@ -121,6 +122,7 @@ describe('POST /booking', () => {
 
   it('should respond with status 403 if ticket type doesnt have hotel', async () => {
     const context = await createBookingWithContext('PAID', false, false);
+    await prisma.booking.deleteMany({});
 
     const result = await server
       .post('/booking')
@@ -132,6 +134,7 @@ describe('POST /booking', () => {
 
   it('should respond with status 403 if ticket arent paid', async () => {
     const context = await createBookingWithContext('RESERVED', true, false);
+    await prisma.booking.deleteMany({});
 
     const result = await server
       .post('/booking')
@@ -148,7 +151,7 @@ describe('PUT /booking', () => {
     const newRoom = await createRoomWithHotelId(context.hotel.id);
 
     const result = await server
-      .post(`/booking/${context.booking.id}`)
+      .put(`/booking/${context.booking.id}`)
       .set('Authorization', `Bearer ${context.token}`)
       .send({ roomId: newRoom.id });
 
@@ -161,7 +164,7 @@ describe('PUT /booking', () => {
     const newRoom = await createRoomWithHotelId(context.hotel.id);
 
     const result = await server
-      .post(`/booking/${context.booking.id}`)
+      .put(`/booking/${context.booking.id}`)
       .set('Authorization', `Bearer ${context.token}`)
       .send({ roomId: newRoom.id });
 
@@ -181,7 +184,7 @@ describe('PUT /booking', () => {
     await createBooking(user3.id, newRoom.id);
 
     const result = await server
-      .post(`/booking/${context.booking.id}`)
+      .put(`/booking/${context.booking.id}`)
       .set('Authorization', `Bearer ${context.token}`)
       .send({ roomId: newRoom.id });
 
@@ -192,15 +195,10 @@ describe('PUT /booking', () => {
     const context = await createBookingWithContext('PAID', true, false);
 
     const result = await server
-      .post(`/booking/${context.booking.id}`)
+      .put(`/booking/${context.booking.id}`)
       .set('Authorization', `Bearer ${context.token}`)
       .send({ roomId: 808080 });
 
-    expect(result.body).toEqual(
-      expect.objectContaining({
-        bookingId: expect.any(Number),
-      }),
-    );
     expect(result.statusCode).toBe(httpStatus.NOT_FOUND);
   });
 });

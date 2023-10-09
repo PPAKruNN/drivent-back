@@ -50,6 +50,14 @@ export function handleApplicationErrors(
     });
   }
 
+  if (err.name === 'CannotJoinFullRoom') {
+    return res.sendStatus(httpStatus.FORBIDDEN);
+  }
+
+  if (err.name === 'ForbiddenAction') {
+    return res.status(httpStatus.FORBIDDEN).send({ message: err.message });
+  }
+
   if (err.name === 'EnrollmentNotFoundError') {
     return res.sendStatus(httpStatus.BAD_REQUEST);
   }
